@@ -2,44 +2,38 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Product;
 use Illuminate\Http\Request;
+use App\Models\Product;
 
 class ProductController extends Controller
 {
-    public function index()
-    {
-        return Product::with('category')->get();
-    }
-
+    // Store a new product
     public function store(Request $request)
     {
+        // Validate input
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string',
             'price' => 'required|numeric',
-            'category_id' => 'required|exists:categories,id',
+            'category' => 'required|string',
+            'status' => 'required|string|in:active,inactive',
+            'image' => 'nullable|image|max:2048', // 2MB max
         ]);
 
-        return Product::create($validated);
-    }
+        // Create new product
+        $product = new Product();
+        $product->name = $validated['name'];
+        $product->price = $validated['price'];
+        $product->category = $validated['category'];
+        $product->status = $validated['status'];
 
-    public function update(Request $request, Product $product)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'price' => 'required|numeric',
-            'category_id' => 'required|exists:categories,id',
-        ]);
+        // ✅ Handle file upload
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('products', 'public');
+            $product->image = $path;
+        }
 
-        $product->update($validated);
+        $product->save();
 
-        return $product;
-    }
-
-    public function destroy(Product $product)
-    {
-        $product->delete();
-
-        return response()->json(['message' => 'Product deleted']);
+        return response()->json($product, 201);
     }
 }
