@@ -1,82 +1,60 @@
 "use client";
 
 import { useState } from "react";
-import { Home, Users, Settings, LogOut } from "lucide-react";
+import { Dumbbell, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import CategoriesPage from "@/app/admin/categories/page";
 
 export default function AdminDashboardPage() {
-  const [active, setActive] = useState("overview");
+  const [active, setActive] = useState("categories");
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-950 text-white">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r p-4 flex flex-col">
-        <h1 className="text-2xl font-bold mb-6">Admin</h1>
-        <nav className="space-y-2 flex-1">
+      <aside className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col">
+        <div className="p-6 border-b border-gray-800">
+          <h2 className="text-2xl font-extrabold text-red-500">
+            Admin Panel
+          </h2>
+          <p className="text-xs text-gray-400 mt-1">PowerHouse Gym</p>
+        </div>
+
+        <nav className="flex-1 p-4 flex flex-col gap-2">
           <Button
-            variant={active === "overview" ? "default" : "ghost"}
-            className="w-full justify-start"
-            onClick={() => setActive("overview")}
+            variant={active === "categories" ? "default" : "ghost"}
+            className={`w-full justify-start ${
+              active === "categories"
+                ? "bg-red-600 hover:bg-red-700"
+                : "text-gray-300 hover:text-white"
+            }`}
+            onClick={() => setActive("categories")}
           >
-            <Home className="mr-2 h-4 w-4" /> Overview
+            <Dumbbell className="h-5 w-5 mr-2" />
+            Categories
           </Button>
+
           <Button
-            variant={active === "users" ? "default" : "ghost"}
-            className="w-full justify-start"
-            onClick={() => setActive("users")}
+            variant={active === "products" ? "default" : "ghost"}
+            className={`w-full justify-start ${
+              active === "products"
+                ? "bg-red-600 hover:bg-red-700"
+                : "text-gray-300 hover:text-white"
+            }`}
+            onClick={() => setActive("products")}
           >
-            <Users className="mr-2 h-4 w-4" /> Users
-          </Button>
-          <Button
-            variant={active === "settings" ? "default" : "ghost"}
-            className="w-full justify-start"
-            onClick={() => setActive("settings")}
-          >
-            <Settings className="mr-2 h-4 w-4" /> Settings
+            <Package className="h-5 w-5 mr-2" />
+            Products
           </Button>
         </nav>
-        <Button variant="destructive" className="mt-auto">
-          <LogOut className="mr-2 h-4 w-4" /> Logout
-        </Button>
+
+        <div className="p-4 border-t border-gray-800 text-sm text-gray-400">
+          © {new Date().getFullYear()} PowerHouse Gym
+        </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 p-6">
-        {active === "overview" && (
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-            <Card>
-              <CardContent className="p-6">
-                <h2 className="font-semibold text-lg">Users</h2>
-                <p className="text-gray-600">150 registered users</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <h2 className="font-semibold text-lg">Donations</h2>
-                <p className="text-gray-600">$12,340 total</p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {active === "users" && (
-          <Card>
-            <CardContent className="p-6">
-              <h2 className="font-semibold text-lg mb-4">Manage Users</h2>
-              <p className="text-gray-600">User list and actions go here...</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {active === "settings" && (
-          <Card>
-            <CardContent className="p-6">
-              <h2 className="font-semibold text-lg mb-4">Settings</h2>
-              <p className="text-gray-600">Admin settings form goes here...</p>
-            </CardContent>
-          </Card>
-        )}
+      {/* Main content */}
+      <main className="flex-1 p-8 bg-gray-950">
+        {active === "categories" && <CategoriesPage />}
       </main>
     </div>
   );
