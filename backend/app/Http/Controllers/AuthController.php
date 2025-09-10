@@ -2,58 +2,80 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    // Hardcoded users
+    private $users = [
+        [
+            'id' => 1,
+            'name' => 'Admin User',
+            'email' => 'admin@example.com',
+            'password' => 'password', // plain text for demo
+            'role' => 'admin',
+        ],
+        [
+            'id' => 2,
+            'name' => 'Regular User',
+            'email' => 'user@example.com',
+            'password' => 'password', // plain text for demo
+            'role' => 'user',
+        ]
+    ];
+
+    // LOGIN (without DB)
     public function login(Request $request)
     {
-        // Validate input
         $validated = $request->validate([
             'email' => 'required|email',
             'password' => 'required|string',
         ]);
 
-        // Find user by email
-        $user = User::where('email', $validated['email'])->first();
+        // Search user in hardcoded list
+        $user = collect($this->users)->firstWhere('email', $validated['email']);
 
-        if (!$user || !Hash::check($validated['password'], $user->password)) {
+        if (!$user || $validated['password'] !== $user['password']) {
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
         }
 
-        // Create token
-        $token = $user->createToken('auth_token')->plainTextToken;
+        // Instead of Sanctum token, return a fake token
+        $token = base64_encode($user['email'] . '|' . now());
 
-        // Return JSON with role, token, and user info
         return response()->json([
             'message' => 'Login successful',
             'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role, // admin or user
+                'id' => $user['id'],
+                'name' => $user['name'],
+                'email' => $user['email'],
+                'role' => $user['role'],
             ],
             'token' => $token,
             'token_type' => 'Bearer',
         ]);
     }
 
-    // Optional: logout endpoint
-    public function logout(Request $request)
+    // REGISTER (just returns error, no DB)
+    public function register(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
-
-        return response()->json(['message' => 'Logged out']);
+        return response()->json([
+            'message' => 'Registration disabled in demo mode (use hardcoded accounts).',
+        ], 403);
     }
 
-    // Optional: get current user info
+    // LOGOUT (dummy)
+    public function logout(Request $request)
+    {
+        return response()->json(['message' => 'Logged out (demo mode)']);
+    }
+
+    // CURRENT USER INFO (fake)
     public function me(Request $request)
     {
-        return response()->json($request->user());
+        return response()->json(['message' => 'Demo mode, no real user session']);
     }
 }
