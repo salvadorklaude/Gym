@@ -2,48 +2,41 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import CategoriesPage from "@/app/admin/categories/page";
+import ProductsPage from "../products/page";
 
-type Category = {
-  id?: number;
-  name: string;
-};
-
-type CategoryFormProps = {
-  category: Category;
-  onClose: () => void;
-  onSaved: () => void;
-};
-
-export default function CategoryForm({ category, onClose, onSaved }: CategoryFormProps) {
-  const [name, setName] = useState(category.name || "");
-
-  const handleSubmit = async () => {
-    const url = category.id ? `/api/categories/${category.id}` : "/api/categories";
-    const method = category.id ? "PUT" : "POST";
-
-    await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
-    });
-
-    onSaved();
-    onClose();
-  };
+export default function AdminDashboardPage() {
+  const [active, setActive] = useState("categories");
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white p-6 rounded w-full max-w-md space-y-4">
-        <h2 className="text-xl font-bold">{category.id ? "Edit Category" : "Add Category"}</h2>
+    <div className="flex min-h-screen">
+      {/* Sidebar */}
+      <aside className="w-64 bg-white shadow-lg p-4">
+        <h2 className="text-lg font-bold mb-6">Admin Dashboard</h2>
 
-        <Input placeholder="Category Name" value={name} onChange={e => setName(e.target.value)} />
-
-        <div className="flex justify-end gap-2">
-          <Button onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit}>Save</Button>
+        <div className="flex flex-col gap-2">
+          <Button
+            variant={active === "categories" ? "default" : "ghost"}
+            className="w-full justify-start"
+            onClick={() => setActive("categories")}
+          >
+            Categories
+          </Button>
+          <Button
+            variant={active === "products" ? "default" : "ghost"}
+            className="w-full justify-start"
+            onClick={() => setActive("products")}
+          >
+            Products
+          </Button>
         </div>
-      </div>
+      </aside>
+
+      {/* Main content */}
+      <main className="flex-1 p-6 bg-gray-50">
+        {active === "categories" && <CategoriesPage />}
+        {active === "products" && <ProductsPage />}
+      </main>
     </div>
   );
 }

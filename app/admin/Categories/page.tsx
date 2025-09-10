@@ -1,9 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import CategoryForm from "@/app/admin/Categories/CategoriesForm";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type Category = {
   id: number;
@@ -12,53 +19,146 @@ type Category = {
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [newCategory, setNewCategory] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingName, setEditingName] = useState("");
 
-  async function fetchCategories() {
-    const res = await fetch("/api/categories");
-    const data = await res.json();
-    setCategories(data);
-  }
-
+  // Fetch categories
   useEffect(() => {
-    fetchCategories();
+    fetch("http://localhost:8000/api/categories") // Laravel API
+      .then((res) => res.json())
+      .then((data) => setCategories(data))
+      .catch((err) => console.error("Failed to fetch categories:", err));
   }, []);
 
+  // Create category
+  const handleAdd = async () => {
+    if (!newCategory.trim()) return;
+    try {
+      const res = await fetch("http://localhost:8000/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newCategory }),
+      });
+      const data = await res.json();
+      setCategories([...categories, data]); // append new category
+      setNewCategory("");
+    } catch (err) {
+      console.error("Failed to add category:", err);
+    }
+  };
+
+  // Update category
+  const handleUpdate = async (id: number) => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/categories/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editingName }),
+      });
+      const data = await res.json();
+      setCategories(
+        categories.map((c) => (c.id === id ? { ...c, name: data.name } : c))
+      );
+      setEditingId(null);
+      setEditingName("");
+    } catch (err) {
+      console.error("Failed to update category:", err);
+    }
+  };
+
+  // Delete category
   const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this category?")) return;
-    await fetch(`/api/categories/${id}`, { method: "DELETE" });
-    setCategories(categories.filter(c => c.id !== id));
+    try {
+      await fetch(`http://localhost:8000/api/categories/${id}`, {
+        method: "DELETE",
+      });
+      setCategories(categories.filter((c) => c.id !== id));
+    } catch (err) {
+      console.error("Failed to delete category:", err);
+    }
   };
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Categories</h1>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-6">Manage Categories</h1>
 
-      <Button onClick={() => setEditingCategory({} as Category)}>Add Category</Button>
-
-      {editingCategory && (
-        <CategoryForm
-          category={editingCategory}
-          onClose={() => setEditingCategory(null)}
-          onSaved={fetchCategories}
+      {/* Add category */}
+      <div className="flex gap-2 mb-6">
+        <Input
+          placeholder="New category name"
+          value={newCategory}
+          onChange={(e) => setNewCategory(e.target.value)}
         />
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-        {categories.map(category => (
-          <Card key={category.id}>
-            <CardHeader>{category.name}</CardHeader>
-            <CardContent>
-              <div className="flex gap-2 mt-4">
-                <Button onClick={() => setEditingCategory(category)}>Edit</Button>
-                <Button variant="destructive" onClick={() => handleDelete(category.id)}>
-                  Delete
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        <Button onClick={handleAdd}>Add</Button>
       </div>
+
+      {/* Categories table */}
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>ID</TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {categories.map((category) => (
+            <TableRow key={category.id}>
+              <TableCell>{category.id}</TableCell>
+              <TableCell>
+                {editingId === category.id ? (
+                  <Input
+                    value={editingName}
+                    onChange={(e) => setEditingName(e.target.value)}
+                  />
+                ) : (
+                  category.name
+                )}
+              </TableCell>
+              <TableCell className="text-right space-x-2">
+                {editingId === category.id ? (
+                  <>
+                    <Button
+                      size="sm"
+                      onClick={() => handleUpdate(category.id)}
+                    >
+                      Save
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setEditingId(null)}
+                    >
+                      Cancel
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEditingId(category.id);
+                        setEditingName(category.name);
+                      }}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleDelete(category.id)}
+                    >
+                      Delete
+                    </Button>
+                  </>
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

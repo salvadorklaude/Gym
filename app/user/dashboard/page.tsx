@@ -10,7 +10,10 @@ export default function UserDashboard() {
     const token = localStorage.getItem("auth_token");
     const role = localStorage.getItem("user_role");
 
-    if (!token || role !== "user") router.replace("/login");
+    // if not logged in or not a 'user', redirect to login
+    if (!token || role !== "user") {
+      router.replace("/login");
+    }
   }, [router]);
 
   return (

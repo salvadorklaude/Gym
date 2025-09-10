@@ -1,89 +1,150 @@
-// app/products/page.tsx
 "use client";
 
-import { useState } from "react";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 type Product = {
   id: number;
   name: string;
-  description: string;
   price: number;
+  category: string;
+  status: "active" | "inactive";
+  image?: string;
 };
 
 export default function ProductsPage() {
-  // Example products
-  const productsData: Product[] = [
-    { id: 1, name: "Sample Product 1", description: "This is a sample product.", price: 99.99 },
-    { id: 2, name: "Sample Product 2", description: "Another sample product.", price: 149.99 },
-    { id: 3, name: "Sample Product 3", description: "Yet another product.", price: 79.99 },
-  ];
+  const [products, setProducts] = useState<Product[]>([]);
+  const [newProduct, setNewProduct] = useState({
+    name: "",
+    price: 0,
+    category: "",
+    status: "active" as "active" | "inactive",
+    image: null as File | null,
+  });
 
-  const [cart, setCart] = useState<Product[]>([]);
+  // ✅ Load products from backend
+  useEffect(() => {
+    fetch("http://127.0.0.1:8000/api/products")
+      .then((res) => res.json())
+      .then((data) => setProducts(data))
+      .catch((err) => console.error("Error loading products:", err));
+  }, []);
 
-  // Add to cart
-  const addToCart = (product: Product) => {
-    setCart([...cart, product]);
+  // ✅ Add product with FormData
+  const addProduct = async () => {
+    try {
+      const formData = new FormData();
+      formData.append("name", newProduct.name);
+      formData.append("price", newProduct.price.toString());
+      formData.append("category", newProduct.category);
+      formData.append("status", newProduct.status);
+      if (newProduct.image) {
+        formData.append("image", newProduct.image);
+      }
+
+      const res = await fetch("http://127.0.0.1:8000/api/products", {
+        method: "POST",
+        body: formData, // ✅ send as multipart/form-data
+      });
+
+      if (!res.ok) throw new Error("Failed to add product");
+
+      const data = await res.json();
+      setProducts([...products, data]); // update list
+      setNewProduct({ name: "", price: 0, category: "", status: "active", image: null });
+    } catch (err) {
+      console.error(err);
+      alert("Error adding product!");
+    }
   };
-
-  // Remove from cart
-  const removeFromCart = (id: number) => {
-    setCart(cart.filter((item) => item.id !== id));
-  };
-
-  // Total price
-  const total = cart.reduce((sum, item) => sum + item.price, 0);
 
   return (
-    <main className="flex gap-6 p-6">
-      {/* Products Grid */}
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {productsData.map((product) => (
-          <Card key={product.id}>
-            <CardHeader>
-              <h2 className="font-semibold">{product.name}</h2>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600">{product.description}</p>
-              <p className="mt-2 font-bold">${product.price.toFixed(2)}</p>
-              <Button className="mt-4" onClick={() => addToCart(product)}>
-                Add to Cart
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+    <div className="p-6 space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Add Product</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label>Name</Label>
+            <Input
+              value={newProduct.name}
+              onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label>Price</Label>
+            <Input
+              type="number"
+              value={newProduct.price}
+              onChange={(e) => setNewProduct({ ...newProduct, price: parseFloat(e.target.value) })}
+            />
+          </div>
+          <div>
+            <Label>Category</Label>
+            <Input
+              value={newProduct.category}
+              onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label>Product Image</Label>
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={(e) =>
+                setNewProduct({ ...newProduct, image: e.target.files ? e.target.files[0] : null })
+              }
+            />
+          </div>
+          <Button onClick={addProduct}>Add Product</Button>
+        </CardContent>
+      </Card>
 
-      {/* Cart Sidebar */}
-      <div className="w-80 border-l border-gray-200 pl-4">
-        <h2 className="text-xl font-bold mb-4">Shopping Cart ({cart.length})</h2>
-        <div className="space-y-4">
-          {cart.length === 0 && <p>Your cart is empty.</p>}
-          {cart.map((product) => (
-            <Card key={product.id}>
-              <CardHeader>
-                <h3 className="font-semibold">{product.name}</h3>
-              </CardHeader>
-              <CardContent className="flex justify-between items-center">
-                <p>${product.price.toFixed(2)}</p>
-                <Button variant="destructive" onClick={() => removeFromCart(product.id)}>
-                  Remove
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-
-          {cart.length > 0 && (
-            <>
-              <Separator className="my-2" />
-              <p className="font-bold text-lg">Total: ${total.toFixed(2)}</p>
-              <Button className="w-full mt-2">Checkout</Button>
-            </>
-          )}
-        </div>
-      </div>
-    </main>
+      {/* Product List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Products</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Price</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Image</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {products.map((p) => (
+                <TableRow key={p.id}>
+                  <TableCell>{p.name}</TableCell>
+                  <TableCell>${p.price}</TableCell>
+                  <TableCell>{p.category}</TableCell>
+                  <TableCell>{p.status}</TableCell>
+                  <TableCell>
+                    {p.image ? (
+                      <img
+                        src={`http://127.0.0.1:8000/storage/${p.image}`}
+                        alt={p.name}
+                        className="h-12 w-12 object-cover rounded"
+                      />
+                    ) : (
+                      "—"
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
