@@ -1,0 +1,30 @@
+# Node
+node_modules/
+.next/
+dist/
+
+# Laravel
+vendor/
+.env
+/storage/*.key
+/public/storage
+
+# OS / IDE files
+.DS_Store
+.idea/
+.vscode/
+# Laravel
+/vendor
+/node_modules
+/.env
+/public/storage
+/storage/*.key
+/storage/framework/cache/data
+/storage/logs
+/storage/app/public
+
+# Next.js
+.next
+out
+
+
