@@ -67,15 +67,19 @@ class AuthController extends Controller
         ], 403);
     }
 
-    // LOGOUT (dummy)
-    public function logout(Request $request)
-    {
-        return response()->json(['message' => 'Logged out (demo mode)']);
-    }
+    // LOGOUT
+public function logout(Request $request)
+{
+    $request->user()->currentAccessToken()->delete();
+
+    return response()->json(['message' => 'Logged out']);
+}
+
 
     // CURRENT USER INFO (fake)
     public function me(Request $request)
     {
         return response()->json(['message' => 'Demo mode, no real user session']);
     }
+    
 }
